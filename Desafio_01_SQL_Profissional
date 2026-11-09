@@ -1,0 +1,182 @@
+/* =====================================================================
+   DESAFIO PRÁTICO — Perguntas de negócio (Atlas Global Group)
+   Banco: AtlasGlobal
+
+   Como usar: escreva sua consulta logo abaixo de cada pergunta,
+   no espaço indicado. Não é necessário usar JOIN em nenhuma questão.
+   ===================================================================== */
+
+USE AtlasGlobal;
+GO
+
+
+-- =====================================================================
+-- 1) Quantos pedidos a empresa já recebeu, e quantos desses pedidos
+--    foram cancelados?
+--    Dica: use WHERE para separar os cancelados. Tabela: pedidos.
+-- =====================================================================
+
+SELECT *
+FROM pedidos
+
+SELECT 
+COUNT(id_pedido) AS QuantidadePedido
+FROM pedidos
+
+SELECT COUNT(id_pedido) AS Pedidos_cancelados
+FROM pedidos
+WHERE status = 'cancelado'
+
+
+
+-- =====================================================================
+-- 2) Qual o ticket médio (valor médio por pedido) dos pedidos em reais
+--    (BRL), considerando só os pedidos não cancelados e não pendentes?
+--    Dica: WHERE (moeda + status) + AVG. Tabela: pedidos.
+-- =====================================================================
+SELECT 
+AVG(valor_total) AS TicketMedio
+FROM pedidos
+WHERE codigo_moeda = 'BRL' AND status = 'entregue'
+
+
+
+-- =====================================================================
+-- 3) Considerando só os pedidos em reais (BRL), qual o valor médio dos
+--    pedidos de cada canal de venda (id_canal), e qual canal tem mais
+--    pedidos no total?
+--    Dica: WHERE codigo_moeda = 'BRL' + GROUP BY id_canal, com COUNT e AVG
+--    na mesma consulta.
+--    Tabela: pedidos.
+-- =====================================================================
+SELECT id_canal,
+COUNT(id_pedido) AS total_pedidos,
+AVG(valor_total) AS valor_medio
+FROM pedidos
+WHERE codigo_moeda = 'BRL'
+GROUP BY id_canal
+ORDER BY total_pedidos DESC
+
+-- =====================================================================
+-- 4) Qual método de pagamento é o mais usado (maior quantidade de
+--    pagamentos) e qual movimenta mais dinheiro (maior soma)?
+--    Considere só pagamentos com status 'aprovado'.
+--    Dica: WHERE status_pagamento = 'aprovado' + GROUP BY metodo_pagamento.
+--    Tabela: pagamentos.
+-- =====================================================================
+SELECT metodo_pagamento,
+COUNT(id_pagamento) as ContagemPagamentos,
+SUM(valor) as Valor_total
+FROM pagamentos
+WHERE status_pagamento = 'aprovado'
+GROUP BY metodo_pagamento
+ORDER BY ContagemPagamentos DESC 
+
+SELECT metodo_pagamento,
+COUNT(id_pagamento) as ContagemPagamentos,
+SUM(valor) as Valor_total
+FROM pagamentos
+WHERE status_pagamento = 'aprovado'
+GROUP BY metodo_pagamento
+ORDER BY Valor_total DESC 
+
+
+
+-- =====================================================================
+-- 5) A nota média de satisfação (NPS) está subindo ou caindo, ano a ano?
+--    Dica: GROUP BY usando YEAR(data_resposta). Tabela: pesquisas_nps.
+-- =====================================================================
+SELECT YEAR(data_resposta) AS ano,
+SUM(nota) as nota_total
+FROM pesquisas_nps
+GROUP BY YEAR(data_resposta)
+ORDER BY nota_total DESC
+
+
+
+-- =====================================================================
+-- 6) Quantos pedidos cada status representa (entregue, cancelado,
+--    devolvido, em_transporte, pendente)?
+--    Dica: GROUP BY status + COUNT(*). Tabela: pedidos.
+-- =====================================================================
+
+SELECT status,
+COUNT(id_pedido) as TOTAL_PEDIDOS
+FROM pedidos
+GROUP BY status
+ORDER BY TOTAL_PEDIDOS DESC
+
+
+-- =====================================================================
+-- 7) Quais clientes já fizeram 8 pedidos ou mais?
+--    Dica: GROUP BY id_cliente + HAVING COUNT(*) >= 8. Tabela: pedidos.
+-- =====================================================================
+SELECT id_cliente,
+COUNT(id_pedido) as Total_pedidos
+FROM pedidos
+GROUP BY id_cliente
+HAVING COUNT(*) >= 8
+ORDER BY Total_pedidos DESC
+
+
+-- =====================================================================
+-- A PARTIR DAQUI, MAIS DIFÍCIL
+-- =====================================================================
+
+
+-- =====================================================================
+-- 8) Existe algum produto que praticamente não vende? Liste os produtos
+--    que venderam MENOS DE 30 UNIDADES no total, somando todos os
+--    pedidos.
+--    Dica: GROUP BY id_produto, somando a quantidade, e use HAVING
+--    para aplicar o corte de 30 unidades. Tabela: itens_pedido.
+-- =====================================================================
+
+SELECT id_produto,
+SUM(quantidade) as Quantidade_vendas
+FROM itens_pedido
+GROUP BY id_produto
+HAVING SUM(quantidade) < 30
+
+
+
+
+
+
+-- =====================================================================
+-- 9) Quais moedas (codigo_moeda) têm salário médio acima de 3.000
+--    (considerando a tabela de remuneração inteira, sem filtrar por
+--    data), e que também tenham pelo menos 5 registros de remuneração
+--    (para não deixar uma moeda com pouquíssimos registros distorcer
+--    a média)?
+--    Dica: GROUP BY codigo_moeda, com AVG(salario_mensal) e COUNT(*)
+--    juntos. No HAVING, combine as duas condições com AND.
+--    Tabela: remuneracao.
+-- =====================================================================
+
+
+SELECT codigo_moeda,
+AVG(salario_mensal) as Media_salario
+FROM remuneracao
+GROUP BY codigo_moeda
+HAVING AVG(salario_mensal) > 3000 AND count(*) >=5 
+
+
+-- =====================================================================
+-- 10) Quais centros de custo (id_centro_custo) tiveram um gasto médio
+--     por despesa ACIMA DE 3.000 dólares, considerando apenas os
+--     centros de custo com PELO MENOS 300 despesas registradas (para
+--     não deixar um centro de custo com poucos lançamentos distorcer
+--     a média)?
+--     Dica: GROUP BY id_centro_custo, com AVG(valor_usd) e COUNT(*)
+--     juntos. No HAVING, combine as duas condições com AND.
+--     Tabela: despesas.
+-- =====================================================================
+
+
+
+SELECT id_centro_custo,
+AVG(valor_usd) as Media_despesa
+FROM despesas
+GROUP BY id_centro_custo
+HAVING AVG(valor_usd) > 3000 and COUNT(*) >= 300
